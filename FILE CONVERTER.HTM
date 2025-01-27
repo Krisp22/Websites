@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Wizard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+        
+        body, html {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0f1e, #16213e);
+            z-index: -1;
+        }
+        .cursor-effect {
+            position: absolute;
+            width: 30vmax;
+            height: 30vmax;
+            background: radial-gradient(circle, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0) 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+        .title {
+            font-size: 3rem;
+            color: #fff;
+            margin-bottom: 2rem;
+            cursor: default;
+        }
+        .title span {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .boxes-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            width: 40%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        .box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+        .box:hover::before {
+            transform: rotate(0deg);
+        }
+        .dropzone {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropzone:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #4a5fff;
+        }
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        .dropzone:hover .upload-icon {
+            transform: scale(1.1);
+        }
+        .file-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease-out;
+            transition: all 0.3s ease;
+        }
+        .file-item:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:hover {
+            background: #5a6fd6;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        .btn:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+        @keyframes ripple {
+            0% { transform: scale(0, 0); opacity: 1; }
+            20% { transform: scale(25, 25); opacity: 1; }
+            100% { opacity: 0; transform: scale(40, 40); }
+        }
+        .conversion-select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #667eea;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position-x: 98%;
+            background-position-y: 50%;
+            transition: all 0.3s ease;
+        }
+        .conversion-select:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .conversion-select:focus {
+            outline: none;
+            border-color: #4a5fff;
+            box-shadow: 0 0 0 2px rgba(74, 95, 255, 0.2);
+        }
+        .conversion-select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+        #status {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        #status.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-20px);
+        }
+        .success { background: #4CAF50; color: white; }
+        .error { background: #f44336; color: white; }
+        h2, p {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="cursor-effect"></div>
+    <div class="container">
+        <h1 class="title">
+            <span>F</span><span>i</span><span>l</span><span>e</span>
+            <span>W</span><span>i</span><span>z</span><span>a</span><span>r</span><span>d</span>
+        </h1>
+        <div class="boxes-container">
+            <!-- ZIP Creator Box -->
+            <div class="box">
+                <h2>ZIP Creator</h2>
+                <div id="zipDropzone" class="dropzone">
+                    <i class="fas fa-file-archive upload-icon"></i>
+                    <p>Drag and Drop Files Here or Click to Upload</p>
+                    <input type="file" id="zipFileInput" class="file-input" multiple>
+                </div>
+                <div id="zipFileList" class="file-list"></div>
+                <button id="createZipBtn" class="btn">Create ZIP</button>
+            </div>
+
+            <!-- File Converter Box -->
+            <div class="box">
+                <h2>File Converter</h2>
+                <select id="conversionType" class="conversion-select">
+                    <option value="">Select Conversion Type</option>
+                    <option value="jpg-to-png">JPG to PNG</option>
+                    <option value="png-to-jpg">PNG to JPG</option>
+                    <option value="pdf-to-doc">PDF to DOC</option>
+                    <option value="doc-to-pdf">DOC to PDF</option>
+                    <option value="mp3-to-wav">MP3 to WAV</option>
+                    <option value="wav-to-mp3">WAV to MP3</option>
+                    <option value="ppt-to-pdf">PPT to PDF</option>
+                    <option value="xlsx-to-csv">XLSX to CSV</option>
+                    <option value="gif-to-mp4">GIF to MP4</option>
+                    <option value="mp4-to-gif">MP4 to GIF</option>
+                    <option value="svg-to-png">SVG to PNG</option>
+                    <option value="webp-to-jpg">WebP to JPG</option>
+                </select>
+                <div id="converterDropzone" class="dropzone">
+                    <i class="fas fa-exchange-alt upload-icon"></i>
+                    <p>Drag and Drop File to Convert or Click to Upload</p>
+                    <input type="file" id="convertFileInput" class="file-input">
+                </div>
+                <div id="convertFileList" class="file-list"></div>
+                <button id="convertBtn" class="btn">Convert File</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="status"></div>
+
+    <audio id="successSound" src="https://www.soundjay.com/button/sounds/button-09.mp3"></audio>
+    <audio id="errorSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
+
+    <script>
+        // Cursor effect
+        document.addEventListener('mousemove', (e) => {
+            const cursorEffect = document.querySelector('.cursor-effect');
+            cursorEffect.style.left = e.clientX + 'px';
+            cursorEffect.style.top = e.clientY + 'px';
+        });
+
+        // Interactive title
+        const title = document.querySelector('.title');
+        const letters = title.querySelectorAll('span');
+
+        letters.forEach((letter, index) => {
+            letter.addEventListener('mouseenter', () => {
+                letter.style.transform = 'scale(1.2)';
+                letter.style.color = '#667eea';
+                letter.style.textShadow = '0 0 10px rgba(102, 126, 234, 0.5)';
+            });
+
+            letter.addEventListener('mouseleave', () => {
+                letter.style.transform = 'scale(1)';
+                letter.style.color = '#fff';
+                letter.style.textShadow = 'none';
+            });
+        });
+
+        title.addEventListener('mousemove', (e) => {
+            const rect = title.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const percent = x / rect.width;
+            
+            letters.forEach((letter, index) => {
+                const offset = Math.abs(index / letters.length - percent) * 2;
+                letter.style.transform = `scale(${1 + (1 - offset) * 0.2})`;
+            });
+        });
+
+        // File handling functions
+        function handleFiles(files, listId) {
+            const fileList = document.getElementById(listId);
+            fileList.innerHTML = '';
+            Array.from(files).forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>${file.name}</span>
+                    <button onclick="removeFile(this)">Remove</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function removeFile(button) {
+            button.closest('.file-item').remove();
+        }
+
+        // Drag and drop functionality
+        ['zipDropzone', 'converterDropzone'].forEach(id => {
+            const dropzone = document.getElementById(id);
+            dropzone.addEventListener('dragover', e => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('dragover');
+            });
+            dropzone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files, id === 'zipDropzone' ? 'zipFileList' : 'convertFileList');
+            });
+        });
+
+        // File input change handlers
+        document.getElementById('zipFileInput').addEventListener('change', function() {
+            handleFiles(this.files, 'zipFileList');
+        });
+
+        document.getElementById('convertFileInput').addEventListener('change', function() {
+            handleFiles(this.files, 'convertFileList');
+        });
+
+        // Convert and ZIP buttons functionality
+        document.getElementById('createZipBtn').addEventListener('click', function() {
+            // Implement ZIP creation logic here
+            showStatus('ZIP file created successfully!', 'success');
+        });
+
+        document.getElementById('convertBtn').addEventListener('click', function() {
+            const conversionType = document.getElementById('conversionType').value;
+            if (!conversionType) {
+                showStatus('Please select a conversion type', '
+            if (!conversionType) {
+                showStatus('Please select a conversion type', 'error');
+                return;
+            }
+            const fileList = document.getElementById('convertFileList');
+            if (fileList.children.length === 0) {
+                showStatus('Please select a file to convert', 'error');
+                return;
+            }
+            // Implement conversion logic here
+            showStatus('File converted successfully!', 'success');
+        });
+
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = type;
+            statusElement.classList.add('show');
+            setTimeout(() => {
+                statusElement.classList.remove('show');
+            }, 3000);
+            playSound(type);
+        }
+
+        function playSound(type) {
+            const audio = document.getElementById(type === 'success' ? 'successSound' : 'errorSound');
+            audio.play().catch(e => console.warn('Audio playback failed:', e));
+        }
+
+        // Enhance dropdown animation
+        const conversionSelect = document.getElementById('conversionType');
+        conversionSelect.addEventListener('focus', () => {
+            conversionSelect.style.transform = 'scale(1.05)';
+        });
+        conversionSelect.addEventListener('blur', () => {
+            conversionSelect.style.transform = 'scale(1)';
+        });
+
+        // Add hover effect to file items
+        document.querySelectorAll('.file-list').forEach(list => {
+            list.addEventListener('mouseover', (e) => {
+                if (e.target.classList.contains('file-item')) {
+                    e.target.style.transform = 'translateX(5px)';
+                }
+            });
+            list.addEventListener('mouseout', (e) => {
+                if (e.target.classList.contains('file-item')) {
+                    e.target.style.transform = 'translateX(0)';
+                }
+            });
+        });
+
+        // Simulate file conversion (replace with actual conversion logic)
+        function simulateFileConversion(file, conversionType) {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    if (Math.random() > 0.1) { // 90% success rate
+                        resolve(`converted_${file.name}`);
+                    } else {
+                        reject(new Error('Conversion failed'));
+                    }
+                }, 2000); // Simulate 2 second conversion time
+            });
+        }
+
+        // Update convert button click handler
+        document.getElementById('convertBtn').addEventListener('click', async function() {
+            const conversionType = document.getElementById('conversionType').value;
+            const fileList = document.getElementById('convertFileList');
+            if (!conversionType || fileList.children.length === 0) {
+                showStatus('Please select a conversion type and file', 'error');
+                return;
+            }
+
+            const file = fileList.children[0].querySelector('span').textContent;
+            showStatus('Converting file...', 'success');
+
+            try {
+                const convertedFileName = await simulateFileConversion({ name: file }, conversionType);
+                showStatus(`File converted successfully: ${convertedFileName}`, 'success');
+                // Here you would typically initiate a download of the converted file
+            } catch (error) {
+                showStatus('Conversion failed: ' + error.message, 'error');
+            }
+        });
+
+        // Simulate ZIP creation
+        document.getElementById('createZipBtn').addEventListener('click', function() {
+            const fileList = document.getElementById('zipFileList');
+            if (fileList.children.le
