@@ -234,6 +234,18 @@
         h2, p {
             color: #fff;
         }
+        .remove-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .remove-btn:hover {
+            background: #d32f2f;
+        }
     </style>
 </head>
 <body>
@@ -291,6 +303,8 @@
     <audio id="successSound" src="https://www.soundjay.com/button/sounds/button-09.mp3"></audio>
     <audio id="errorSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
         // Cursor effect
         document.addEventListener('mousemove', (e) => {
@@ -329,28 +343,44 @@
         });
 
         // File handling functions
+        let zipFiles = [];
+        let convertFile = null;
+
         function handleFiles(files, listId) {
             const fileList = document.getElementById(listId);
             fileList.innerHTML = '';
-            Array.from(files).forEach(file => {
+            
+            if (listId === 'zipFileList') {
+                zipFiles = Array.from(files);
+            } else {
+                convertFile = files[0];
+            }
+
+            Array.from(files).forEach((file, index) => {
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 fileItem.innerHTML = `
                     <span>${file.name}</span>
-                    <button onclick="removeFile(this)">Remove</button>
+                    <button class="remove-btn" onclick="removeFile('${listId}', ${index})">Remove</button>
                 `;
                 fileList.appendChild(fileItem);
             });
         }
 
-        function removeFile(button) {
-            button.closest('.file-item').remove();
+        function removeFile(listId, index) {
+            if (listId === 'zipFileList') {
+                zipFiles.splice(index, 1);
+                handleFiles(zipFiles, 'zipFileList');
+            } else {
+                convertFile = null;
+                document.getElementById('convertFileList').innerHTML = '';
+            }
         }
 
         // Drag and drop functionality
         ['zipDropzone', 'converterDropzone'].forEach(id => {
             const dropzone = document.getElementById(id);
-            dropzone.addEventListener('dragover', e => {
+                       dropzone.addEventListener('dragover', e => {
                 e.preventDefault();
                 dropzone.classList.add('dragover');
             });
@@ -375,25 +405,47 @@
 
         // Convert and ZIP buttons functionality
         document.getElementById('createZipBtn').addEventListener('click', function() {
-            // Implement ZIP creation logic here
-            showStatus('ZIP file created successfully!', 'success');
+            if (zipFiles.length === 0) {
+                showStatus('Please add files to create a ZIP', 'error');
+                return;
+            }
+
+            const zip = new JSZip();
+            zipFiles.forEach(file => {
+                zip.file(file.name, file);
+            });
+
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                saveAs(content, "archive.zip");
+                showStatus('ZIP file created successfully!', 'success');
+            });
         });
 
-        document.getElementById('convertBtn').addEventListener('click', function() {
+        document.getElementById('convertBtn').addEventListener('click', async function() {
             const conversionType = document.getElementById('conversionType').value;
-            if (!conversionType) {
-                showStatus('Please select a conversion type', '
             if (!conversionType) {
                 showStatus('Please select a conversion type', 'error');
                 return;
             }
-            const fileList = document.getElementById('convertFileList');
-            if (fileList.children.length === 0) {
+            if (!convertFile) {
                 showStatus('Please select a file to convert', 'error');
                 return;
             }
-            // Implement conversion logic here
-            showStatus('File converted successfully!', 'success');
+
+            showStatus('Converting file...', 'success');
+
+            // Simulated conversion process
+            // In a real-world scenario, you'd send the file to a server for conversion
+            setTimeout(() => {
+                const [fromExt, toExt] = conversionType.split('-to-');
+                const newFileName = convertFile.name.replace(new RegExp(`\\.${fromExt}$`), `.${toExt}`);
+                
+                // Create a dummy Blob to simulate the converted file
+                const dummyContent = new Blob(['Converted file content'], {type: 'text/plain'});
+                saveAs(dummyContent, newFileName);
+
+                showStatus(`File converted successfully: ${newFileName}`, 'success');
+            }, 2000);
         });
 
         function showStatus(message, type) {
@@ -434,42 +486,6 @@
                 }
             });
         });
-
-        // Simulate file conversion (replace with actual conversion logic)
-        function simulateFileConversion(file, conversionType) {
-            return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    if (Math.random() > 0.1) { // 90% success rate
-                        resolve(`converted_${file.name}`);
-                    } else {
-                        reject(new Error('Conversion failed'));
-                    }
-                }, 2000); // Simulate 2 second conversion time
-            });
-        }
-
-        // Update convert button click handler
-        document.getElementById('convertBtn').addEventListener('click', async function() {
-            const conversionType = document.getElementById('conversionType').value;
-            const fileList = document.getElementById('convertFileList');
-            if (!conversionType || fileList.children.length === 0) {
-                showStatus('Please select a conversion type and file', 'error');
-                return;
-            }
-
-            const file = fileList.children[0].querySelector('span').textContent;
-            showStatus('Converting file...', 'success');
-
-            try {
-                const convertedFileName = await simulateFileConversion({ name: file }, conversionType);
-                showStatus(`File converted successfully: ${convertedFileName}`, 'success');
-                // Here you would typically initiate a download of the converted file
-            } catch (error) {
-                showStatus('Conversion failed: ' + error.message, 'error');
-            }
-        });
-
-        // Simulate ZIP creation
-        document.getElementById('createZipBtn').addEventListener('click', function() {
-            const fileList = document.getElementById('zipFileList');
-            if (fileList.children.le
+    </script>
+</body>
+</html>
