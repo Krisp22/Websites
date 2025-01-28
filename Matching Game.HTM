@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Match Pro</title>
+    <style>
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --card-bg: #fff;
+            --card-border: #ddd;
+            --primary-color: #4a90e2;
+            --success-color: #4CAF50;
+        }
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --card-bg: #2c2c2c;
+            --card-border: #444;
+            --primary-color: #64b5f6;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        #game-board {
+            display: grid;
+            gap: 15px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .card {
+            aspect-ratio: 1 / 1;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--card-bg);
+            border: 2px solid var(--card-border);
+            transition: all 0.3s ease;
+        }
+        .card-back {
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 2em;
+        }
+        .card-front {
+            transform: rotateY(180deg);
+        }
+        .card.matched .card-face {
+            opacity: 0.7;
+            box-shadow: 0 0 15px var(--success-color);
+        }
+        #controls {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #357abd;
+            transform: translateY(-2px);
+        }
+        .select-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 5px;
+        }
+        select {
+            appearance: none;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 2px solid var(--primary-color);
+            padding: 10px 40px 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .select-wrapper::after {
+            content: '▼';
+            font-size: 1em;
+            color: var(--primary-color);
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        .select-wrapper:hover::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+        select:hover, select:focus {
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+        #timer, #score {
+            font-size: 1.2em;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 2em;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        #theme-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            #controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            .select-wrapper, button {
+                width: 80%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Emoji Match Pro</h1>
+        <div id="controls">
+            <button id="start-btn">Start Game</button>
+            <button id="reset-btn">Reset</button>
+            <div class="select-wrapper">
+                <select id="category-select">
+                    <option value="animals">Animals</option>
+                    <option value="food">Food</option>
+                    <option value="sports">Sports</option>
+                    <option value="travel">Travel</option>
+                </select>
+            </div>
+            <div class="select-wrapper">
+                <select id="difficulty-select">
+                    <option value="easy">Easy (4x4)</option>
+                    <option value="medium">Medium (6x5)</option>
+                    <option value="hard">Hard (8x6)</option>
+                </select>
+            </div>
+        </div>
+        <div id="timer">Time: 0s</div>
+        <div id="score">Score: 0</div>
+        <div id="game-board"></div>
+    </div>
+    <button id="theme-toggle">☀️</button>
+
+    <script>
+        const categories = {
+            animals: ['🐶', '🐱', '🐭', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄'],
+            food: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍒', '🍑', '🥝', '🍍', '🥭', '🍎', '🍏', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍒', '🍑'],
+            sports: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥊', '🏹', '🥋', '🎣', '🥅', '⛳', '🏹', '🎽', '🏅', '🥇', '🥈', '🥉', '🏆', '🏵️'],
+            travel: ['✈️', '🚗', '🚕', '🚙', '🚌', '🚎', '🏍️', '🚂', '🚢', '🚠', '🚀', '🛸', '🚁', '🛶', '⛵', '🚤', '🛥️', '🛳️', '🚉', '🚆', '🚅', '🚊', '🚞', '🚋']
+        };
+
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let timer;
+        let seconds = 0;
+        let score = 0;
+        let isProcessing = false;
+
+        const gameBoard = document.getElementById('game-board');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        const categorySelect = document.getElementById('category-select');
+        const difficultySelect = document.getElementById('difficulty-select');
+        const timerDisplay = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('score');
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function createCard(emoji) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-face card-front">${emoji}</div>
+                    <div class="card-face card-back">?</div>
+                </div>
+            `;
+            card.addEventListener('click', flipCard);
+            return card;
+        }
+
+        function flipCard() {
+            if (isProcessing || this.classList.contains('flipped') || this.classList.contains('matched')) {
+                return;
+            }
+            
+            this.classList.add('flipped');
+            flippedCards.push(this);
+            
+            if (flippedCards.length === 2) {
+                isProcessing = true;
+                setTimeout(checkMatch, 500);
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const match = card1.querySelector('.card-front').textContent === 
+                          card2.querySelector('.card-front').textContent;
+
+            if (match) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedPairs++;
+                score += 10;
+                updateScore();
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                }, 1000);
+                score = Math.max(0, score - 1);
+                updateScore();
+            }
+
+            flippedCards = [];
+            setTimeout(() => {
+                isProcessing = false;
+            }, 1000);
+
+            if (matchedPairs === cards.length / 2) {
+                clearInterval(timer);
+                setTimeout(() => alert(`Congratulations! You've matched all pairs in ${seconds} seconds!`), 500);
+            }
+        }
+
+        function updateTimer() {
+            seconds++;
+            timerDisplay.textContent = `Time: ${seconds}s`;
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+
+        function startGame() {
+            const category = categorySelect.value;
+            const difficulty = difficultySelect.value;
+            let gridSize, cardCount, fontSize;
+
+            switch(difficulty) {
+                case 'easy':
+                    gridSize = [4, 4];
+                    cardCount = 16;
+                    fontSize = '3em';
+                    break;
+                case 'medium':
+                    gridSize = [6, 5];
+                    cardCount = 30;
+                    fontSize = '2.5em';
+                    break;
+                case 'hard':
+                    gridSize = [8, 6];
+                    cardCount = 48;
+                    fontSize = '2em';
+                    break;
+            }
+
+            gameBoard.style.gridTemplateColumns = `repeat(${gridSize[0]}, 1fr)`;
+            gameBoard.style.width = difficulty === 'easy' ? '400px' : '100%';
+            cards = [...categories[category].slice(0, cardCount/2), ...categories[category].slice(0, cardCount/2)];
+            shuffleArray(cards);
+            gameBoard.innerHTML = '';
+            cards.forEach(emoji => {
+                const card = createCard(emoji);
+                card.querySelector('.card-front').style.fontSize = fontSize;
+                gameBoard.appendChild(card);
+            });
+            matchedPairs = 0;
+            seconds = 0;
+            score = 0;
+            updateScore();
+            clearInterval(timer);
+            timer = setInterval(updateTimer, 1000);
+        }
+
+        function resetGame() {
+            clearInterval(timer);
+            seconds = 0;
+            score = 0;
+            timerDisplay.textContent = 'Time: 0s';
+            updateScore();
+            gameBoard.innerHTML = '';
+            flippedCards = [];
+            isProcessing = false;
+        }
+
+        startBtn.addEventListener('click', startGame);
+        resetBtn.addEventListener('click', resetGame);
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '🌙' : '☀️';
+            themeToggle.style.transform = 'scale(1.2) rotate(360deg)';
+            setTimeout(() => {
+                themeToggle.style.transform = 'scale(1) rotate(0deg)';
+            }, 300);
+        });
+
+        // Initialize the game
+        startGame();
+    </script>
+</body>
+</html>
