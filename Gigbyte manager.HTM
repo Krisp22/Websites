@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced File Size Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 800px;
+            width: 100%;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .drop-zone {
+            border: 2px dashed #fff;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.02);
+        }
+
+        .drop-zone.drag-over {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .drop-zone::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drop-zone:hover::after {
+            opacity: 1;
+        }
+
+        .btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .result {
+            margin-top: 2rem;
+        }
+
+        #file-list {
+            list-style-type: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #file-list li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.5s ease-out;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        #file-list li:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .remove-btn {
+            background-color: rgba(244, 67, 54, 0.7);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            background-color: rgba(244, 67, 54, 0.9);
+            transform: scale(1.05);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .scale-container {
+            width: 100%;
+            height: 60px;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+            margin: 40px auto;
+        }
+
+        .scale-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #FFC107, #F44336);
+            border-radius: 30px;
+            transition: width 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .scale-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .scale-text .number {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes countAnimation {
+            0% {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .animate-number {
+            animation: countAnimation 0.3s ease-out;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .file-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Advanced File Size Calculator</h1>
+        <div id="drop-zone" class="drop-zone">
+            <p><i class="fas fa-cloud-upload-alt"></i> Drag and drop files here or click to select</p>
+            <input type="file" id="file-input" multiple>
+        </div>
+        <div class="scale-container">
+            <div class="scale-fill"></div>
+            <div class="scale-text">0 GB</div>
+        </div>
+        <div class="controls">
+            <button id="remove-all" class="btn"><i class="fas fa-trash-alt"></i> Remove All</button>
+            <button id="sort-alpha" class="btn"><i class="fas fa-sort-alpha-down"></i> Sort A-Z</button>
+            <button id="sort-size" class="btn"><i class="fas fa-sort-amount-down"></i> Sort by Size</button>
+        </div>
+        <div id="result" class="result">
+            <h2>Total Size: <span id="total-size">0 B</span></h2>
+            <ul id="file-list"></ul>
+        </div>
+    </div>
+
+    <audio id="addSound" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3"></audio>
+    <audio id="removeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-plastic-bubble-click-1124.mp3"></audio>
+    <audio id="sortSound" src="https://assets.mixkit.co/sfx/preview/mixkit-futuristic-robotic-short-alarm-267.mp3"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const totalSizeElement = document.getElementById('total-size');
+            const fileList = document.getElementById('file-list');
+            const scaleFill = document.querySelector('.scale-fill');
+            const scaleText = document.querySelector('.scale-text');
+            const removeAllBtn = document.getElementById('remove-all');
+            const sortAlphaBtn = document.getElementById('sort-alpha');
+            const sortSizeBtn = document.getElementById('sort-size');
+
+            const addSound = document.getElementById('addSound');
+            const removeSound = document.getElementById('removeSound');
+            const sortSound = document.getElementById('sortSound');
+
+            let files = [];
+            let totalSize = 0;
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            removeAllBtn.addEventListener('click', () => {
+                files = [];
+                totalSize = 0;
+                updateUI();
+                removeSound.play();
+            });
+
+            sortAlphaBtn.addEventListener('click', () => {
+                files.sort((a, b) => a.name.localeCompare(b.name));
+                updateUI();
+                sortSound.play();
+            });
+
+            sortSizeBtn.addEventListener('click', () => {
+                files.sort((a, b) => b.size - a.size);
+                updateUI();
+                sortSound.play();
+            });
+
+            function handleFiles(newFiles) {
+                for (let file of newFiles) {
+                    files.push(file);
+                    totalSize += file.size;
+                }
+                updateUI();
+                addSound.play();
+            }
+
+            function updateUI() {
+                totalSizeElement.textContent = formatSize(totalSize);
+                fileList.innerHTML = '';
+                files.forEach((file, index) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span><i class="fas fa-file file-icon"></i>${file.name}: ${formatSize(file.size)}</span>
+                        <button class="remove-btn"><i class="fas fa-times"></i></button>
+                    `;
+                    li.querySelector('.remove-btn').addEventListener('click', () => {
+                        totalSize -= file.size;
+                        files.splice(index, 1);
+                        updateUI();
+                        removeSound.play();
+                    });
+                    fileList.appendChild(li);
+                });
+                updateScale();
+            }
+
+            function updateScale() {
+                const gigabytes = totalSize / (1024 * 1024 * 1024);
+                const percentage = Math.min(gigabytes * 10, 100); // 10% per GB, max 100%
+                scaleFill.style.width = `${percentage}%`;
+                
+                const oldText = scaleText.textContent;
+                const newText = `${gigabytes.toFixed(2)} GB`;
+                
+                if (oldText !== newText) {
+                    animateNumber(scaleText, oldText, newText);
+                }
+            }
+
+            function animateNumber(element, oldValue, newValue) {
+                const oldNumber = parseFloat(oldValue);
+                const newNumber = parseFloat(newValue);
+                const duration = 300; // Animation duration in milliseconds
+                const steps = 20; // Number of steps in the animation
+                const stepDuration = duration / steps;
+                
+                let currentStep = 0;
+                
+                const interval = setInterval(() => {
+                    currentStep++;
+                    const progress = currentStep / steps;
+                    const currentNumber = oldNumber + (newNumber - oldNumber) * progress;
+                    
+                    element.innerHTML = `<span class="number">${currentNumber.toFixed(2)}</span> GB`;
+                    element.querySelector('.number').classList.add('animate-number');
+                    
+                    if (currentStep === steps) {
+                        clearInterval(interval);
+                    }
+                }, stepDuration);
+            }
+
+            function formatSize(bytes) {
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                let size = bytes;
+                let unitIndex = 0;
+                while (size >= 1024 && unitIndex < units.length - 1) {
+                    size /= 1024;
+                    unitIndex++;
+                }
+                return `${size.toFixed(2)} ${units[unitIndex]}`;
+            }
+        });
+    </script>
+</body>
+</html>
