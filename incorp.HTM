@@ -80,29 +80,6 @@
                 transform: translateY(100%) translateZ(500px) rotateX(90deg);
             }
         }
-        #mobileControls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 200px;
-        }
-        .mobileBtn {
-            width: 60px;
-            height: 60px;
-            margin: 5px;
-            background-color: rgba(0, 255, 0, 0.3);
-            border: 2px solid #0f0;
-            color: #0f0;
-            font-size: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -111,12 +88,6 @@
     <div id="overlay">
         <div id="message"></div>
         <button id="continueBtn" onclick="nextStep()">Continue</button>
-    </div>
-    <div id="mobileControls">
-        <div class="mobileBtn" id="upBtn">↑</div>
-        <div class="mobileBtn" id="leftBtn">←</div>
-        <div class="mobileBtn" id="rightBtn">→</div>
-        <div class="mobileBtn" id="downBtn">↓</div>
     </div>
 
     <script>
@@ -269,17 +240,6 @@
             }
         }
 
-        function setupMobileControls() {
-            const mobileControls = document.getElementById('mobileControls');
-            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                mobileControls.style.display = 'flex';
-                document.getElementById('upBtn').addEventListener('click', () => movePlayer(0, -1));
-                document.getElementById('downBtn').addEventListener('click', () => movePlayer(0, 1));
-                document.getElementById('leftBtn').addEventListener('click', () => movePlayer(-1, 0));
-                document.getElementById('rightBtn').addEventListener('click', () => movePlayer(1, 0));
-            }
-        }
-
         function startGame() {
             const mazeWidth = Math.floor(canvas.width / cellSize);
             const mazeHeight = Math.floor(canvas.height / cellSize);
@@ -287,7 +247,6 @@
             player = { x: 0, y: 0 };
             exit = { x: mazeWidth - 1, y: mazeHeight - 1 };
             document.addEventListener('keydown', handleKeyDown);
-            setupMobileControls();
             createCodeBackground();
             gameLoop();
         }
@@ -352,27 +311,14 @@
         }
 
         function revealCountry() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
-                    
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const country = data.address.country;
-                            showMessage(`I see you. You think you're safe in ${country}? There is no escape from this reality.`);
-                        })
-                        .catch(error => {
-                            showMessage("Your digital footprint reveals all.");
-                        });
-                }, function(error) {
-                    showMessage("Even without your location, I can see right through you.");
-                });
-            } else {
-                showMessage("Your digital footprint reveals all.");
-            }
+            showMessage(`This simulation you call reality... it's all fake. Just like how I know you're in Australia. Wake up.`);
             document.getElementById('continueBtn').style.display = 'none';
+        }
+
+        function startQuestionnaire() {
+            overlay.style.opacity = 1;
+            overlay.style.pointerEvents = 'auto';
+            nextStep();
         }
 
         function createCodeBackground() {
