@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Animated Calendar</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg-day: linear-gradient(45deg, #6ab1d7, #33d9de);
+            --bg-night: linear-gradient(45deg, #2c3e50, #34495e);
+            --calendar-bg-day: rgba(255, 255, 255, 0.95);
+            --calendar-bg-night: rgba(52, 73, 94, 0.95);
+            --text-color-day: #2c3e50;
+            --text-color-night: #ecf0f1;
+            --header-bg-day: #3498db;
+            --header-bg-night: #2c3e50;
+            --weekdays-bg-day: #34495e;
+            --weekdays-bg-night: #2c3e50;
+            --day-hover-bg-day: #dfe6e9;
+            --day-hover-bg-night: #4a6572;
+            --today-bg-day: #3498db;
+            --today-bg-night: #e74c3c;
+            --selected-outline-day: #e74c3c;
+            --selected-outline-night: #f39c12;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: var(--bg-day);
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+
+        body.night-mode {
+            background: var(--bg-night);
+        }
+
+        .calendar-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .calendar {
+            background-color: var(--calendar-bg-day);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 400px;
+            transition: all 0.5s ease, transform 0.3s ease;
+        }
+
+        .calendar:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            filter: blur(0.5px);
+        }
+
+        .night-mode .calendar {
+            background-color: var(--calendar-bg-night);
+        }
+
+        .header {
+            background-color: var(--header-bg-day);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            transition: background-color 0.5s ease;
+        }
+
+        .night-mode .header {
+            background-color: var(--header-bg-night);
+        }
+
+        .month-year {
+            font-size: 28px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .prev-btn { left: 20px; }
+        .next-btn { right: 20px; }
+
+        .weekdays {
+            display: flex;
+            background-color: var(--weekdays-bg-day);
+            padding: 10px 0;
+            transition: background-color 0.5s ease;
+        }
+
+        .night-mode .weekdays {
+            background-color: var(--weekdays-bg-night);
+        }
+
+        .weekdays div {
+            color: white;
+            flex: 1;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .days div {
+            padding: 10px;
+            text-align: center;
+            transition: all 0.3s;
+            border-radius: 50%;
+            cursor: pointer;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        .days div:hover:not(.empty) {
+            background-color: var(--day-hover-bg-day);
+            transform: scale(1.1);
+            filter: blur(0.5px);
+        }
+
+        .night-mode .days div:hover:not(.empty) {
+            background-color: var(--day-hover-bg-night);
+        }
+
+        .prev-date, .next-date {
+            opacity: 0.5;
+        }
+
+        .today {
+            background-color: var(--today-bg-day);
+            color: white;
+        }
+
+        .night-mode .today {
+            background-color: var(--today-bg-night);
+        }
+
+        .selected {
+            outline: 3px solid var(--selected-outline-day);
+            outline-offset: -3px;
+        }
+
+        .night-mode .selected {
+            outline-color: var(--selected-outline-night);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .days div:not(.empty) {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .mode-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .mode-toggle i {
+            transition: all 0.5s ease;
+        }
+
+        .mode-toggle:active i {
+            animation: rotate 0.5s linear;
+        }
+
+        .year-picker {
+            background-color: var(--calendar-bg-day);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 150px;
+            height: 400px;
+            transition: all 0.5s ease;
+        }
+
+        .night-mode .year-picker {
+            background-color: var(--calendar-bg-night);
+        }
+
+        .year-picker-header {
+            background-color: var(--header-bg-day);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            transition: background-color 0.5s ease;
+        }
+
+        .night-mode .year-picker-header {
+            background-color: var(--header-bg-night);
+        }
+
+        .year-list {
+            height: calc(100% - 40px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--header-bg-day) var(--calendar-bg-day);
+        }
+
+        .night-mode .year-list {
+            scrollbar-color: var(--header-bg-night) var(--calendar-bg-night);
+        }
+
+        .year-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .year-list::-webkit-scrollbar-thumb {
+            background-color: var(--header-bg-day);
+            border-radius: 3px;
+        }
+
+        .night-mode .year-list::-webkit-scrollbar-thumb {
+            background-color: var(--header-bg-night);
+        }
+
+        .year-option {
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .year-option:hover {
+            background-color: var(--day-hover-bg-day);
+            transform: translateX(5px);
+        }
+
+        .night-mode .year-option:hover {
+            background-color: var(--day-hover-bg-night);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .year-picker {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <button class="mode-toggle" id="modeToggle">
+        <i class="fas fa-sun"></i>
+    </button>
+    <div class="calendar-container">
+        <div class="year-picker">
+            <div class="year-picker-header">Year</div>
+            <div class="year-list" id="yearList"></div>
+        </div>
+        <div class="calendar">
+            <div class="header">
+                <button class="nav-btn prev-btn" id="prevBtn">&lt;</button>
+                <h2 class="month-year" id="monthYear"></h2>
+                <button class="nav-btn next-btn" id="nextBtn">&gt;</button>
+            </div>
+            <div class="weekdays">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+            </div>
+            <div class="days" id="daysContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const monthYear = document.getElementById('monthYear');
+        const daysContainer = document.getElementById('daysContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const modeToggle = document.getElementById('modeToggle');
+        const yearList = document.getElementById('yearList');
+
+        let currentDate = new Date();
+        let selectedDate = null;
+
+        function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const prevLastDay = new Date(year, month, 0);
+    const nextDays = 7 - lastDay.getDay() - 1;
+
+    monthYear.innerHTML = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+
+    let days = "";
+
+    for (let x = firstDay.getDay(); x > 0; x--) {
+        days += `<div class="prev-date">${prevLastDay.getDate() - x + 1}</div>`;
+    }
+
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+        if (i === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear()) {
+            days += `<div class="today">${i}</div>`;
+        } else {
+            days += `<div>${i}</div>`;
+        }
+    }
+
+    for (let j = 1; j <= nextDays; j++) {
+        days += `<div class="next-date">${j}</div>`;
+    }
+
+    daysContainer.innerHTML = days;
+    addDayClickListeners();
+}
+
+
+        function addDayClickListeners() {
+            const dayElements = daysContainer.getElementsByTagName('div');
+            for (let day of dayElements) {
+                if (!day.classList.contains('prev-date') && !day.classList.contains('next-date')) {
+                    day.addEventListener('click', () => {
+                        if (selectedDate) {
+                            selectedDate.classList.remove('selected');
+                        }
+                        day.classList.add('selected');
+                        selectedDate = day;
+
+                        day.style.animation = 'none';
+                        day.offsetHeight; // Trigger reflow
+                        day.style.animation = 'fadeIn 0.5s ease-out forwards';
+                    });
+                }
+            }
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
+            renderCalendar();
+            daysContainer.style.animation = 'fadeIn 0.5s ease-out forwards';
+        }
+
+        prevBtn.addEventListener('click', () => changeMonth('prev'));
+        nextBtn.addEventListener('click', () => changeMonth('next'));
+
+        modeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('night-mode');
+            modeToggle.innerHTML = document.body.classList.contains('night-mode') 
+                ? '<i class="fas fa-moon"></i>' 
+                : '<i class="fas fa-sun"></i>';
+        });
+
+        function populateYearList() {
+            let years = '';
+            for (let year = 1; year <= 10000; year++) {
+                years += `<div class="year-option" data-year="${year}">${year}</div>`;
+            }
+            yearList.innerHTML = years;
+            addYearClickListeners();
+        }
+
+        function addYearClickListeners() {
+            const yearOptions = yearList.getElementsByClassName('year-option');
+            for (let option of yearOptions) {
+                option.addEventListener('click', (e) => {
+                    const year = parseInt(e.target.dataset.year);
+                    currentDate.setFullYear(year);
+                    renderCalendar();
+                });
+            }
+        }
+
+        renderCalendar();
+        populateYearList();
+    </script>
+</body>
+</html>
